@@ -10,7 +10,7 @@
     - name: Copy files from source to destination
       copy:
         src: "{{ source }}"
-        dest: "{{ destination }}"
+        dest: /home/ubuntu
         mode: '0644'
 
     - name: Make the deploy script executable

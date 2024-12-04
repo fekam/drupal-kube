@@ -37,7 +37,7 @@ pipeline {
                 echo 'Setting up the database using Ansible...'
                 script {
                     sh '''  
-                        ansible-playbook -i $INVENTORY_FILE setup_and_test.yml --limit master
+                        ansible-playbook -i inventory deploy-app.yml
                     '''
                 }
             }
