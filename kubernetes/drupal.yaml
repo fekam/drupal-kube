@@ -1,64 +1,51 @@
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: drupal
-  labels:
-    app: drupal
-spec:
-  type: NodePort
-  ports:
-    - port: 80
-      nodePort: 30080
-  selector:
-    app: drupal
-    tier: frontend
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: drupal-claim
-  labels:
-    app: drupal
-spec:
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 10Gi
----
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: drupal
+  namespace: drupal-namespace
   labels:
     app: drupal
 spec:
-  strategy:
-    type: Recreate
+  replicas: 1
+  selector:
+    matchLabels:
+      app: drupal
   template:
     metadata:
       labels:
         app: drupal
-        tier: frontend
     spec:
       containers:
-        - image: drupal:latest
-          name: drupal
-          ports:
-            - containerPort: 30080
-              name: drupal
-          volumeMounts:
-            - name: drupal
-              mountPath: /var/www/html/modules
-              subPath: modules
-            - name: drupal
-              mountPath: /var/www/html/profiles
-              subPath: profiles
-            - name: drupal
-              mountPath: /var/www/html/themes
-              subPath: themes
+      - name: drupal
+        image: drupal:10
+        env:
+        - name: DRUPAL_DATABASE_HOST
+          value: postgres
+        - name: DRUPAL_DATABASE_NAME
+          value: drupaldb
+        - name: DRUPAL_DATABASE_USER
+          value: drupal
+        - name: DRUPAL_DATABASE_PASSWORD
+          value: drupalpassword
+        ports:
+        - containerPort: 80
+        volumeMounts:
+        - name: drupal-data
+          mountPath: /var/www/html/sites/default/files
       volumes:
-        - name: drupal
-          persistentVolumeClaim:
-            claimName: drupal-claim
+      - name: drupal-data
+        persistentVolumeClaim:
+          claimName: drupal-pvc
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: drupal-pvc
+  namespace: drupal-namespace
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
