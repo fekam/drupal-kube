@@ -10,12 +10,14 @@
     - name: Copy files from source to destination
       copy:
         src: "{{ source }}"
-        dest: /home/ubuntu
+        dest: "{{ destination }}"
         mode: '0644'
 
+    - name: Make the deploy script executable
+      file:
+        path: "{{ destination }}/scripts/deploy.sh"
+        mode: '0755'
 
-    - name: Create app1 namespace
-      shell: kubectl apply -f "{{ destination }}/namespace.yml"
-      args:
-        chdir: "{{ destination }}"
-      register: namespace_output_app
+    - name: Execute the deploy script
+      shell: "{{ destination }}/scripts/deploy.sh"
+
