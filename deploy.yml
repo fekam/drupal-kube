@@ -1,0 +1,21 @@
+---
+- name: Deploy application to Kubernetes
+  hosts: master
+  vars:
+    destination: /home/ubuntu/drupal-kube
+    source: /var/lib/jenkins/workspace/drupal-kube
+
+  tasks:
+
+    - name: Copy files from source to destination
+      copy:
+        src: "{{ source }}"
+        dest: /home/ubuntu
+        mode: '0644'
+
+
+    - name: Create app1 namespace
+      shell: kubectl apply -f "{{ destination }}/namespace.yml"
+      args:
+        chdir: "{{ destination }}"
+      register: namespace_output_app

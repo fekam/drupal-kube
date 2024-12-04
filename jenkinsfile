@@ -1,0 +1,62 @@
+pipeline {
+    agent any
+
+    environment {
+        INVENTORY_FILE = "inventory"  
+    }
+
+    stages {
+        stage('Cloner le dépôt ou mettre à jour') {
+            steps {
+                script {
+                    sh '''
+                        # Vérifier si le dossier drupal-kube existe
+                        if [ -d "drupal-kube" ]; then
+                            timestamp=$(date +%Y%m%d%H%M%S)
+                            # Sauvegarde du dossier actuel
+                            mv drupal-kube drupal-kube-backup-$timestamp
+
+                            # Limiter le nombre de sauvegardes à 2
+                            backup_count=$(ls -dt drupal-kube-backup-* 2>/dev/null | wc -l)
+                            if [ $backup_count -gt 2 ]; then
+                                ls -dt drupal-kube-backup-* | tail -n +3 | xargs rm -rf
+                            fi
+                        fi
+                        
+                        # Cloner le dépôt et passer au répertoire dev2
+                        git clone -b main https://github.com/fekam/drupal-kube.git drupal-kube
+
+
+                    '''
+                }
+            }
+        }
+
+        stage('Setup Database') {
+            steps {
+                echo 'Setting up the database using Ansible...'
+                script {
+                    sh '''  
+                        ansible-playbook -i $INVENTORY_FILE setup_and_test.yml --limit master
+                    '''
+                }
+            }
+        }
+
+
+
+        stage('Deploy Application') {
+            steps {
+                echo 'Deploying application using Ansible...'
+                script {
+                    sh '''  
+                        ansible-playbook -i $INVENTORY_FILE setup_and_shutdown.yml --limit master
+                    '''
+                }
+            }
+        }
+
+
+    }
+
+}
